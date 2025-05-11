@@ -20,7 +20,9 @@ pip install gym-sokoban
 
 ### From Repository
 ```bash
-git clone git@github.com:mpSchrader/gym-sokoban.git
+git clone git@github.com:MahsaBazzaz/gym-sokoban.git
+or 
+git clone https://github.com/MahsaBazzaz/gym-sokoban.git
 cd gym-sokoban
 pip install -e .
 ```
