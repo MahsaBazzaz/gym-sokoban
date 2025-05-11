@@ -36,6 +36,10 @@
     "entry_point": "gym_sokoban.envs:SokobanEnv_Huge0"
   },
   {
+    "id": "Sokoban-sturgeon-v0",
+    "entry_point": "gym_sokoban.envs:SokobanEnv_Sturgeon0"
+  },
+  {
     "id": "FixedTarget-Sokoban-v0",
     "entry_point": "gym_sokoban.envs:FixedTargets_Env_v0"
   },

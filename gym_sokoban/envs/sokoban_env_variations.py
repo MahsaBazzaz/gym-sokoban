@@ -5,6 +5,17 @@ from .sokoban_env_two_player import TwoPlayerSokobanEnv
 from .boxoban_env import BoxobanEnv
 
 
+class SokobanEnv_Sturgeon0(SokobanEnv):
+    metadata = {
+        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array'],
+        'render_modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array'],
+    }
+
+    def __init__(self, **kwargs):
+        kwargs['dim_room'] = kwargs.get('dim_room', (8, 8))
+        kwargs['max_steps'] = kwargs.get('max_steps', 200)
+        kwargs['num_boxes'] = kwargs.get('num_boxes', 2)
+        super(SokobanEnv_Sturgeon0, self).__init__(**kwargs)
 class SokobanEnv1(SokobanEnv):
     metadata = {
         'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array'],
