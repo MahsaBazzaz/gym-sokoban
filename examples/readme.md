@@ -14,7 +14,7 @@ pip install -e .
 
 To use an external gym environment you allways need to import the corresponding package along with the regular gym package.
 ```Python
-import gym
+import gymnasium as gym
 import gym_sokoban
 ```
 
@@ -22,11 +22,11 @@ import gym_sokoban
 From now on everything is as you are used to it. You can simply make the environment, render it, perform actions and so on.
 
 ```Python
-env = gym.make('Sokoban-v0')
+env = gym.make('Sokoban-v0', render_mode='human')
 
-env.render(mode='human')
+env.render()
 
 action = env.action_space.sample()
-observation, reward, done, info = env.step(action)
+observation, reward, done, truncated, info = env.step(action)
 ```
 Now that you are all set with the preparations enjoy the external environment.

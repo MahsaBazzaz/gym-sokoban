@@ -1,23 +1,22 @@
-import gym
-from gym.utils import seeding
-from gym.spaces.discrete import Discrete
-from gym.spaces import Box
+import gymnasium as gym
+from gymnasium.utils import seeding
+from gymnasium.spaces import Discrete
+from gymnasium.spaces import Box
 from .room_utils import generate_room
 from .render_utils import room_to_rgb, room_to_tiny_world_rgb
 import numpy as np
 
 
 class SokobanEnv(gym.Env):
-    metadata = {
-        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw'],
-        'render_modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw']
-    }
+  
 
     def __init__(self,
                  dim_room=(10, 10),
                  max_steps=120,
                  num_boxes=4,
                  num_gen_steps=None,
+                 render_mode=None,
+                 render_modes = ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw'],
                  reset=True):
 
         # General Configuration
@@ -38,6 +37,8 @@ class SokobanEnv(gym.Env):
         self.reward_last = 0
 
         # Other Settings
+        self.render_mode = render_mode
+        self.render_modes = render_modes
         self.viewer = None
         self.max_steps = max_steps
         self.action_space = Discrete(len(ACTION_LOOKUP))
@@ -76,9 +77,13 @@ class SokobanEnv(gym.Env):
         self._calc_reward()
         
         done = self._check_if_done()
+        # Check if the episode should be truncated (e.g., exceeded max steps)
+        truncated = False
+        if self.num_env_steps >= self.max_steps:
+            truncated = True
 
         # Convert the observation to RGB frame
-        observation = self.render(mode=observation_mode)
+        observation = self.render()
 
         info = {
             "action.name": ACTION_LOOKUP[action],
@@ -89,7 +94,7 @@ class SokobanEnv(gym.Env):
             info["maxsteps_used"] = self._check_if_maxsteps()
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
 
-        return observation, self.reward_last, done, info
+        return observation, self.reward_last, done, truncated, info
 
     def _push(self, action):
         """
@@ -199,7 +204,7 @@ class SokobanEnv(gym.Env):
     def _check_if_maxsteps(self):
         return (self.max_steps == self.num_env_steps)
 
-    def reset(self, second_player=False, render_mode='rgb_array'):
+    def reset(self, second_player=False, render_mode='rgb_array', seed=None, options= None):
         try:
             self.room_fixed, self.room_state, self.box_mapping = generate_room(
                 dim=self.dim_room,
@@ -210,30 +215,57 @@ class SokobanEnv(gym.Env):
         except (RuntimeError, RuntimeWarning) as e:
             print("[SOKOBAN] Runtime Error/Warning: {}".format(e))
             print("[SOKOBAN] Retry . . .")
-            return self.reset(second_player=second_player, render_mode=render_mode)
+            return self.reset(second_player=second_player, render_mode=render_mode, seed=seed, options=options)
 
         self.player_position = np.argwhere(self.room_state == 5)[0]
         self.num_env_steps = 0
         self.reward_last = 0
         self.boxes_on_target = 0
 
-        starting_observation = self.render(render_mode)
-        return starting_observation
+        starting_observation = self.render()
+        return starting_observation, {}
+    
+    def render(self, close=False, scale=1):
+        if close:
+            if self.viewer is not None:
+                self.viewer.close()
+                self.viewer = None
+            return
 
-    def render(self, mode='human', close=None, scale=1):
-        assert mode in RENDERING_MODES
+        # Get the mode from self.render_mode
+        mode = self.render_mode or "human"  # Default to "human" if no render_mode is set
 
+        # Ensure the render_mode is valid
+        assert mode in ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw'], f"Invalid render_mode: {mode}"
+
+        # Get the image based on the render mode
         img = self.get_image(mode, scale)
 
         if 'rgb_array' in mode:
-            return img
+            return img  # Return the raw image array
 
         elif 'human' in mode:
-            from gym.envs.classic_control import rendering
+            import pyglet
+            from pyglet import image
+
+            # from gymnasium.envs.classic_control import rendering
+            # if self.viewer is None:
+            #     self.viewer = rendering.SimpleImageViewer()
+            # self.viewer.imshow(img)
+            # return self.viewer.isopen  # Return whether the viewer is open
             if self.viewer is None:
-                self.viewer = rendering.SimpleImageViewer()
-            self.viewer.imshow(img)
-            return self.viewer.isopen
+            # Create a pyglet window
+                self.viewer = pyglet.window.Window(width=img.shape[1], height=img.shape[0])
+
+                # Convert the NumPy image to pyglet's image format
+                img_pyglet = image.ImageData(img.shape[1], img.shape[0], 'RGB', img.tobytes())
+                
+                # Clear the window and display the image
+                self.viewer.clear()
+                img_pyglet.blit(0, 0)
+                self.viewer.flip()
+
+            return self.viewer.is_open
 
         elif 'raw' in mode:
             arr_walls = (self.room_fixed == 0).view(np.int8)
@@ -241,10 +273,10 @@ class SokobanEnv(gym.Env):
             arr_boxes = ((self.room_state == 4) + (self.room_state == 3)).view(np.int8)
             arr_player = (self.room_state == 5).view(np.int8)
 
-            return arr_walls, arr_goals, arr_boxes, arr_player
+            return arr_walls, arr_goals, arr_boxes, arr_player  # Return raw state info
 
         else:
-            super(SokobanEnv, self).render(mode=mode)  # just raise an exception
+            raise ValueError(f"Unsupported render mode: {mode}")  # Invalid mode, raise error
 
     def get_image(self, mode, scale=1):
         

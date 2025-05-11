@@ -1,6 +1,6 @@
 from .sokoban_env import SokobanEnv, CHANGE_COORDINATES
-from gym.spaces import Box
-from gym.spaces.discrete import Discrete
+from gymnasium.spaces import Box
+from gymnasium.spaces import Discrete
 from .render_utils import room_to_rgb, room_to_tiny_world_rgb, color_player_two, color_tiny_player_two
 import numpy as np
 
@@ -23,15 +23,15 @@ class TwoPlayerSokobanEnv(SokobanEnv):
 
         _ = self.reset(second_player=True)
 
-    def reset(self, render_mode='rgb_array',second_player=True):
-        super(TwoPlayerSokobanEnv, self).reset(second_player=second_player)
+    def reset(self, render_mode='rgb_array',second_player=True, seed=None, options= None):
+        super(TwoPlayerSokobanEnv, self).reset(second_player=second_player, seed=seed, options=options)
 
         self.player_positions = {
             0: np.argwhere(self.room_state == 5)[0],
             1: np.argwhere(self.room_state == 5)[1]
         }
 
-        return self.render(mode=render_mode)
+        return self.render(), {}
 
     def step(self, action, observation_mode='rgb_array'):
         assert action in ACTION_LOOKUP
@@ -67,9 +67,13 @@ class TwoPlayerSokobanEnv(SokobanEnv):
         self._calc_reward()
 
         done = self._check_if_done()
-
+        # Check if the episode should be truncated (e.g., exceeded max steps)
+        truncated = False
+        if self.num_env_steps >= self.max_steps:
+            truncated = True
+            
         # Convert the observation to RGB frame
-        observation = self.render(mode=observation_mode)
+        observation = self.render()
 
         info = {
             "action.name": ACTION_LOOKUP[action],
@@ -81,7 +85,7 @@ class TwoPlayerSokobanEnv(SokobanEnv):
             info["maxsteps_used"] = self._check_if_maxsteps()
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
 
-        return observation, self.reward_last, done, info
+        return observation, self.reward_last, done, truncated, info
 
     def get_image(self, mode, scale=1):
 

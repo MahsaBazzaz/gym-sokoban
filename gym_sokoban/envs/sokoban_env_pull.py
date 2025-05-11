@@ -1,6 +1,6 @@
 from .sokoban_env import SokobanEnv, CHANGE_COORDINATES
-from gym.spaces import Box
-from gym.spaces.discrete import Discrete
+from gymnasium.spaces import Box
+from gymnasium.spaces import Discrete
 
 
 class PushAndPullSokobanEnv(SokobanEnv):
@@ -44,9 +44,13 @@ class PushAndPullSokobanEnv(SokobanEnv):
         self._calc_reward()
 
         done = self._check_if_done()
+        # Check if the episode should be truncated (e.g., exceeded max steps)
+        truncated = False
+        if self.num_env_steps >= self.max_steps:
+            truncated = True
 
         # Convert the observation to RGB frame
-        observation = self.render(mode=observation_mode)
+        observation = self.render()
 
         info = {
             "action.name": ACTION_LOOKUP[action],
@@ -57,7 +61,7 @@ class PushAndPullSokobanEnv(SokobanEnv):
             info["maxsteps_used"] = self._check_if_maxsteps()
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
 
-        return observation, self.reward_last, done, info
+        return observation, self.reward_last, done, truncated, info
 
     def _pull(self, action):
         """

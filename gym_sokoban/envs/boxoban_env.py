@@ -57,7 +57,7 @@ class BoxobanEnv(SokobanEnv):
 
         starting_observation = room_to_rgb(self.room_state, self.room_fixed)
 
-        return starting_observation
+        return starting_observation, {}
 
     def select_room(self):
         

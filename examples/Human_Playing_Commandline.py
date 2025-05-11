@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 import gym_sokoban
 import time
 from PIL import Image
@@ -38,7 +38,7 @@ if save_images and not os.path.exists('images'):
         print('Error: Creating images target directory. ')
 
 ts = time.time()
-env = gym.make(env_name)
+env = gym.make(env_name, render_mode=render_mode)
 ACTION_LOOKUP = env.unwrapped.get_action_lookup()
 print("Created environment: {}".format(env_name))
 
@@ -62,10 +62,10 @@ def print_available_actions():
 
 for i_episode in range(n_rounds):
     print('Starting new game!')
-    observation = env.reset()
+    observation, info = env.reset(seed=None, options= None)
 
     for t in range(n_steps):
-        env.render(render_mode, scale=scale_image)
+        env.render(scale=scale_image)
 
         action = input('Select action: ')
         try:
@@ -78,16 +78,16 @@ for i_episode in range(n_rounds):
             print_available_actions()
             continue
 
-        observation, reward, done, info = env.step(action, observation_mode=observation_mode)
+        observation, reward, done, truncated, info = env.step(action, observation_mode=observation_mode)
         print(ACTION_LOOKUP[action], reward, done, info)
         print(len(observation), len(observation[0]), len(observation[0][0]))
         if save_images:
-            img = Image.fromarray(np.array(env.render(render_mode, scale=scale_image)), 'RGB')
+            img = Image.fromarray(np.array(env.render(scale=scale_image)), 'RGB')
             img.save(os.path.join('images', 'observation_{}_{}.png'.format(i_episode, t)))
 
         if done:
             print("Episode finished after {} timesteps".format(t+1))
-            env.render(render_mode, scale=scale_image)
+            env.render(scale=scale_image)
             break
 
     if generate_gifs:

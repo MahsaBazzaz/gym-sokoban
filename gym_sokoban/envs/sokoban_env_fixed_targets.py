@@ -1,6 +1,6 @@
 from .sokoban_env import SokobanEnv
 from .render_utils import room_to_rgb_FT, room_to_tiny_world_rgb_FT
-from gym.spaces import Box
+from gymnasium.spaces import Box
 
 
 class FixedTargetsSokobanEnv(SokobanEnv):
@@ -29,9 +29,9 @@ class FixedTargetsSokobanEnv(SokobanEnv):
 
     def step(self, action, observation_mode='rgb_array'):
 
-        observation, self.reward_last, done, info = super(FixedTargetsSokobanEnv, self).step(action, observation_mode)
+        observation, self.reward_last, done, truncated, info = super(FixedTargetsSokobanEnv, self).step(action, observation_mode)
 
-        return observation, self.reward_last, done, info
+        return observation, self.reward_last, done, truncated, info
 
     def _calc_reward(self):
         self._update_box_mapping()
